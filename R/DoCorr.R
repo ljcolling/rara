@@ -367,6 +367,30 @@ giveBF<-function(input){
 }
 
 
+giveBF.noequal<-function(input){
+  returnvalue = ""
+  if(input <1){
+    returnvalue = paste0(sprintf("%.3f",input))
+  }
+  if(input>1 && input < 100 ){
+    returnvalue = paste0(round(input,2))
+  }
+
+  if(input>100){
+    returnvalue = paste0(round(input))
+  }
+
+  if(input>1000){
+    returnvalue = "> 1000"
+  }
+  if(input < 1/1000){
+    returnvalue = "< 0.001"
+  }
+  return(returnvalue)
+}
+
+
+
 
 DoCorr<-function(x.name,y.name,data){
 
@@ -430,7 +454,7 @@ ParseCor<-function(corobj){
 }
 
 
-DoMean<-function(data){
+DoMeanEs.OneSample<-function(data){
 
   data = na.omit(data)
 
@@ -440,9 +464,28 @@ DoMean<-function(data){
 
   if(run.bayes == F){
 
+    output = list()
+    output$n = length(data)
+    output$mean = mean(data)
+    output$hdi = unname(t.test(data)$conf.int)[c(1,2)]
+    efsz = bootES::bootES(data,effect.type = "cohens.d")
+    output$efsz = unname(efsz$t0)
+    output$efsz.ci = unname(efsz$bounds)
+
   }
+
+  return(output)
 }
 
+Parse.MeanEs<-function(bestobj, sub, units){
+# sub = "~diff~"
+# units = "ms"
+return(paste0(
+  paste0("*M*",sub," = ",round(bestobj$mean,2)),", ",
+  paste0("95% HDI[",paste0(round(bestobj$hdi,2),collapse = "; "),"]"),"; ",
+  paste0("*d* = ",round(bestobj$efsz,2)),", ",
+  paste0("95% HDI[",paste0(round(bestobj$efsz.ci,2),collapse = "; "),"]")))
+}
 
 
 
