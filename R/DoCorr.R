@@ -392,7 +392,7 @@ giveBF.noequal<-function(input){
 
 
 
-DoCorr<-function(x.name,y.name,data){
+DoCorr<-function(x.name,y.name,data, this.file){
 
   x = data[,x.name]
   y = data[,y.name]
@@ -404,10 +404,6 @@ DoCorr<-function(x.name,y.name,data){
 
   # check if the bayesian correlation can already been run
   if(run.bayes == TRUE){
-
-
-
-
     if(file.exists(this.file)  == TRUE){
       robj = read.BayesCorrObj(this.file)
     }
@@ -507,5 +503,13 @@ return(paste0(
   paste0("95% HDI[",paste0(round(bestobj$efsz.ci,2),collapse = "; "),"]")))
 }
 
+
+
+read.BayesCorrObj<-function(this.file){
+  temp = new.env()
+  load(this.file, envir = temp)
+  return(eval(parse(text = paste0("temp$",ls(temp)[1]))))
+  
+}
 
 
