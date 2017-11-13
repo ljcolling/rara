@@ -405,9 +405,7 @@ DoCorr<-function(x.name,y.name,data){
   # check if the bayesian correlation can already been run
   if(run.bayes == TRUE){
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 
 
     if(file.exists(this.file)  == TRUE){
@@ -416,16 +414,6 @@ DoCorr<-function(x.name,y.name,data){
     else{
       robj = BayesCorr(x,y, x.name, y.name)
       save("robj",file = this.file)
-
-=======
->>>>>>> parent of ad89683... updated
-=======
->>>>>>> parent of ad89683... updated
-=======
->>>>>>> parent of ad89683... updated
-    the.file = paste0("corr.",x.name,"_",y.name,".roj")
-    if(file.exists(the.file)  == TRUE){
-      robj = read.BayesCorrObj(x.name,y.name)
     }
   }
 
