@@ -406,6 +406,7 @@ DoCorr<-function(x.name,y.name,data){
   if(run.bayes == TRUE){
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
     if(file.exists(this.file)  == TRUE){
@@ -415,6 +416,8 @@ DoCorr<-function(x.name,y.name,data){
       robj = BayesCorr(x,y, x.name, y.name)
       save("robj",file = this.file)
 
+=======
+>>>>>>> parent of ad89683... updated
 =======
 >>>>>>> parent of ad89683... updated
     the.file = paste0("corr.",x.name,"_",y.name,".roj")
