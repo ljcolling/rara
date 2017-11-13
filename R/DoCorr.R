@@ -389,15 +389,10 @@ giveBF.noequal<-function(input){
   return(returnvalue)
 }
 
-read.BayesCorrObj<-function(this.file){
-  temp = new.env()
-  load(this.file, envir = temp)
-  return(eval(parse(text = paste0("temp$",ls(temp)[1]))))
-
-}
 
 
-DoCorr<-function(x.name,y.name,data, this.file){
+
+DoCorr<-function(x.name,y.name,data){
 
   x = data[,x.name]
   y = data[,y.name]
@@ -411,12 +406,17 @@ DoCorr<-function(x.name,y.name,data, this.file){
   if(run.bayes == TRUE){
 
 
+
     if(file.exists(this.file)  == TRUE){
       robj = read.BayesCorrObj(this.file)
     }
     else{
       robj = BayesCorr(x,y, x.name, y.name)
       save("robj",file = this.file)
+
+    the.file = paste0("corr.",x.name,"_",y.name,".roj")
+    if(file.exists(the.file)  == TRUE){
+      robj = read.BayesCorrObj(x.name,y.name)
     }
   }
 
@@ -457,9 +457,9 @@ DoCorr<-function(x.name,y.name,data, this.file){
 ParseCor<-function(corobj){
 
   return(paste0(paste0("*r* = ",weights::rd(corobj$cor$rho)),", ",
-                paste0("95% HDI[",paste0(weights::rd(corobj$cor$hdi),collapse = "; "),"]"),", ",
-                paste0("*BF*~10~ ",corobj$cor$bfAltText),", ",
-                paste0("*BF*~01~ ",corobj$cor$bfNullText)))
+         paste0("95% HDI[",paste0(weights::rd(corobj$cor$hdi),collapse = "; "),"]"),", ",
+         paste0("*BF*~10~ ",corobj$cor$bfAltText),", ",
+         paste0("*BF*~01~ ",corobj$cor$bfNullText)))
 }
 
 
@@ -501,232 +501,14 @@ ParseCor<-function(corobj){
 # }
 
 Parse.MeanEs<-function(bestobj, sub, units){
-  # sub = "~diff~"
-  # units = "ms"
-  return(paste0(
-    paste0("*M*",sub," = ",round(bestobj$mean,2)),units,", ",
-    paste0("95% HDI[",paste0(round(bestobj$hdi,2),collapse = "; "),"]"),"; ",
-    paste0("*d* = ",round(bestobj$efsz,2)),", ",
-    paste0("95% HDI[",paste0(round(bestobj$efsz.ci,2),collapse = "; "),"]")))
-}
-
-
-posteriorSummary <- function( paramSampleVec){
-  meanParam = mean( paramSampleVec )
-  medianParam = median( paramSampleVec )
-  dres = density( paramSampleVec )
-  modeParam = dres$x[which.max(dres$y)]
-  return( list( mean =  meanParam , median =  medianParam , mode = modeParam ))
+# sub = "~diff~"
+# units = "ms"
+return(paste0(
+  paste0("*M*",sub," = ",round(bestobj$mean,2)),", ",
+  paste0("95% HDI[",paste0(round(bestobj$hdi,2),collapse = "; "),"]"),"; ",
+  paste0("*d* = ",round(bestobj$efsz,2)),", ",
+  paste0("95% HDI[",paste0(round(bestobj$efsz.ci,2),collapse = "; "),"]")))
 }
 
 
 
-chain.summ<-function(chain,type){
-
-  M = posteriorSummary(chain)[[type]]
-  HDI = HDInterval::hdi(chain)[c(1,2)]
-  paste0(round(M,2) , ", 95% HDI[" , round(HDI[1],2) , "; " , round(HDI[2],2) , "]")
-
-
-}
-
-
-bfevidence<-function(BF){
-  favour = ""
-  if (BF < 1){
-    favour = "in favour of the null hypothesis"
-  }
-  if (BF >= 1){
-    favour = "in favour of a correlation"
-  }
-
-  if (BF < 1){
-    BF = 1/BF
-  }
-
-  if (1 < BF && BF <= 3){evidence<-"weak evidence"}
-  if (3 < BF && BF <=10){evidence<-"substantial evidence"}
-  if (10 < BF && BF <= 30){evidence<-"strong evidence"}
-  if (30 < BF && BF <= 100){evidence<-"very strong evidence"}
-  if (BF > 100){evidence<-"decisive evidence"}
-
-  returnObj = list()
-  returnObj$favour = favour
-  returnObj$evidence = evidence
-  return(returnObj)
-}
-
-DoCorr.Semi<-function(x.name,y.name,c.name,data){
-
-  # this runs semi-partial correlations through the semi-partial formula
-  # I'll write another function later that does it through a straight
-  # correlation on the regression residuals
-
-  x = data[,x.name]
-  y = data[,y.name]
-  c = data[,c.name]
-
-  df<-data.frame(x = x, y = y, c = c)
-  df<-df[complete.cases(df),]
-  x = df$x
-  y = df$y
-  c = df$c
-
-  # check if the bayesian correlation can already been run
-  if(run.bayes == TRUE){
-
-    the.file = paste0("corr.",x.name,"_",y.name,".roj")
-    if(file.exists(the.file)  == TRUE){
-      robj = read.BayesCorrObj(x.name,y.name)
-    }
-  }
-
-
-  if(run.bayes == FALSE){
-
-    r12 = cor(x,y)
-    r13 = cor(x,c)
-    r23 = cor(y,c)
-
-
-    r1_2.3 = (r12 - (r13 * r23))/sqrt(1 - (r23)^2)
-
-
-    z = DescTools::FisherZ(r1_2.3)
-    n = length(x)
-    se = 1/(sqrt(n- 3))
-    zis = numeric()
-    zis[1] = z - (qnorm(.975, lower.tail = T) * se)
-    zis[2] = z + (qnorm(.975, lower.tail = T) * se)
-    cis = DescTools::FisherZInv(zis)
-
-    robj = list()
-    robj$fit = NULL
-    robj$dist = NULL
-    robj$cor$r.estimate = NULL
-    robj$cor$rho = r1_2.3
-    robj$cor$n = length(x)
-    robj$cor$bfAlt = bf10JeffreysIntegrate(n = robj$cor$n, r = robj$cor$rho )
-    robj$cor$bfAltText = giveBF(robj$cor$bfAlt)
-    robj$cor$bfNull = 1/bf10JeffreysIntegrate(n = robj$cor$n, r = robj$cor$rho )
-    robj$cor$bfNullText = giveBF(robj$cor$bfNull)
-    robj$cor$bfEvidence = NULL
-    robj$cor$bfHypothesis = NULL
-    robj$cor$x.mean = mean(x)
-    robj$cor$y.mean = mean(y)
-    robj$cor$c.mean = mean(c)
-    robj$cor$x.name = x.name
-    robj$cor$y.name = y.name
-    robj$cor$c.name = c.name
-    robj$cor$x.data = x
-    robj$cor$y.data = y
-    robj$cor$c.data = c
-    robj$cor$hdi = cis
-    robj$cor$sig = NULL
-    robj$mcmc = NULL
-
-  }
-
-  return(robj)
-}
-
-
-BayesCorr<-function(x,y, x.name = character(), y.name = character()){
-
-  returnObj = list()
-  model_string <- "
-  model {
-  for(i in 1:n) {
-  x[i,1:2] ~ dmnorm(mu[], prec[ , ])
-  }
-
-  # Constructing the covariance matrix and the corresponding precision matrix.
-  prec[1:2,1:2] <- inverse(cov[,])
-  cov[1,1] <- sigma[1] * sigma[1]
-  cov[1,2] <- sigma[1] * sigma[2] * rho
-  cov[2,1] <- sigma[1] * sigma[2] * rho
-  cov[2,2] <- sigma[2] * sigma[2]
-
-  # Uninformative priors on all parameters which could, of course, be made more informative.
-  sigma[1] ~ dunif(sigmaLow1, sigmaHigh1)
-  sigma[2] ~ dunif(sigmaLow2, sigmaHigh2)
-  rho ~ dunif(-1, 1)
-  mu[1] ~ dnorm(muM1, muP1)
-  mu[2] ~ dnorm(muM2, muP2)
-
-  # Generate random draws from the estimated bivariate normal distribution
-  x_rand ~ dmnorm(mu[], prec[ , ])
-  }
-  "
-  thisData = data.frame(x = x, y = y)
-  data_list = list(x = thisData[, c("x","y")],
-                   n = nrow(thisData),
-                   sigmaLow1 = sd(x) / 1000,
-                   sigmaHigh1 = sd(x) * 1000 ,
-                   sigmaLow2 = sd(y) / 1000,
-                   sigmaHigh2 = sd(y) * 1000,
-                   muM1 = mean(x),
-                   muP1 = 0.000001 * 1/sd(x)^2 ,
-                   muM2 = mean(y),
-                   muP2 = 0.000001 * 1/sd(y)^2)
-
-  mad.x = mad(thisData$x)
-  mad.y = mad(thisData$y)
-  if(mad(thisData$x) ==0){
-    mad.x = sd(thisData$x)
-  }
-  if(mad(thisData$y) ==0){
-    mad.y = sd(thisData$y)
-  }
-
-
-
-  inits_list = list(mu = c(median(thisData$x), median(thisData$y)),
-                    rho = cor(thisData$x,
-                              thisData$y, method = "spearman"),
-                    sigma = c(mad.x,mad.y), .RNG.name = "base::Mersenne-Twister", .RNG.seed = 6)
-
-  jags_model <- jags.model(textConnection(model_string), data = data_list,
-                           inits = inits_list, n.adapt = 500, n.chains = 3, quiet = TRUE)
-  update(jags_model, 1000)
-
-  mcmc_samples <- coda.samples(jags_model, c("mu", "rho", "sigma", "x_rand"),
-                               n.iter = 10000, thin = 1)
-
-  samples_mat <- as.matrix(mcmc_samples)
-  rho = samples_mat[,"rho"]
-
-  bf = abs(bf10JeffreysIntegrate(n =  nrow(thisData), r = mean(rho)))
-
-  samples_dat = data.frame(x = samples_mat[, c("x_rand[1]")],
-                           y = samples_mat[, c("x_rand[2]")])
-
-  returnObj$fit = ggplot(data = thisData, aes(x = x, y = y)) + geom_point() + stat_ellipse(data = samples_dat, aes(x, y), level = .95, type = "norm", linetype = 2)
-  returnObj$dist = ggplot(data = data.frame(rho = returnObj$samples_mat[,"rho"]), aes(x = rho)) + geom_histogram(bins = 100) + scale_x_continuous(limits = c(-1,1)) + geom_vline(xintercept = hdi(rho)[1], linetype = 2)  + geom_vline(xintercept = hdi(rho)[2], linetype = 2)
-
-  cor = list()
-  cor$r.estimate = cor.test(x,y)
-  cor$rho = median(rho)
-  cor$n = nrow(thisData)
-  cor$bfAlt = bf
-  cor$bfNull = 1/bf
-  cor$bfEvidence = bfevidence(cor$bfAlt)$evidence
-  cor$bfHypothesis = bfevidence(cor$bfAlt)$favour
-  cor$x.mean = mean(x)
-  cor$y.mean = mean(y)
-  cor$x.name = x.name
-  cor$y.name = y.name
-  cor$x.data = x
-  cor$y.data = y
-  cor$hdi = hdi(rho)
-  cor$sig = 1
-  if ((sum(cor$hdi > 0)) == 1){
-    cor$sig = 0
-  }
-
-
-  returnObj$cor = cor
-  returnObj$mcmc = samples_mat
-
-  return(returnObj)
-}
