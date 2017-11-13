@@ -415,8 +415,8 @@ DoCorr<-function(x.name,y.name,data, this.file){
       robj = read.BayesCorrObj(this.file)
     }
     else{
-    robj = BayesCorr(x,y, x.name, y.name)
-    save("robj",file = this.file)
+      robj = BayesCorr(x,y, x.name, y.name)
+      save("robj",file = this.file)
     }
   }
 
@@ -463,28 +463,42 @@ ParseCor<-function(corobj){
 }
 
 
-DoMeanEs.OneSample<-function(data){
-
-  data = na.omit(data)
-
-  if(run.bayes == T){
-    cat("whooops!")
-  }
-
-  if(run.bayes == F){
-
-    output = list()
-    output$n = length(data)
-    output$mean = mean(data)
-    output$hdi = unname(t.test(data)$conf.int)[c(1,2)]
-    efsz = bootES::bootES(data,effect.type = "cohens.d")
-    output$efsz = unname(efsz$t0)
-    output$efsz.ci = unname(efsz$bounds)
-
-  }
-
-  return(output)
-}
+# DoMeanEs.OneSample<-function(data, this.file = NULL){
+#   output = list()
+#   data = na.omit(data)
+#
+#   if(run.bayes == T){
+#     if(file.exists(this.file) == T){
+#       tempenv = new.env()
+#       load(file = this.file, envir = tempenv)
+#       best.temp = tempenv$best.temp
+#     } else{
+#       best.temp = BEST::BESTmcmc(data)
+#       save(best.temp, file = this.file)
+#     }
+#
+#
+#     output$n = length(data)
+#     output$mean = mean(best.temp$mu)
+#     output$hdi = unname(HDInterval::hdi(best.temp$mu))
+#     output$efsz = posteriorSummary(best.temp$mu / best.temp$sigma)$mode
+#     output$efsz.ci = unname(HDInterval::hdi(best.temp$mu / best.temp$sigma))
+#   }
+#
+#   if(run.bayes == F){
+#
+#
+#     output$n = length(data)
+#     output$mean = mean(data)
+#     output$hdi = unname(t.test(data)$conf.int)[c(1,2)]
+#     efsz = bootES::bootES(data,effect.type = "cohens.d")
+#     output$efsz = unname(efsz$t0)
+#     output$efsz.ci = unname(efsz$bounds)
+#
+#   }
+#
+#   return(output)
+# }
 
 Parse.MeanEs<-function(bestobj, sub, units){
   # sub = "~diff~"
