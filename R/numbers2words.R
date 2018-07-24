@@ -1,10 +1,12 @@
 #https://github.com/ateucher/useful_code/blob/master/R/numbers2words.r
+#' Numbers to words
+#' @export
 numbers2words <- function(x){
-  ## Function by John Fox found here: 
+  ## Function by John Fox found here:
   ## http://tolstoy.newcastle.edu.au/R/help/05/04/2715.html
   ## Tweaks by AJH to add commas and "and"
   helper <- function(x){
-    
+
     digits <- rev(strsplit(as.character(x), "")[[1]])
     nDigits <- length(digits)
     if (nDigits == 1) as.vector(ones[digits])
@@ -12,7 +14,7 @@ numbers2words <- function(x){
       if (x <= 19) as.vector(teens[digits[1]])
     else trim(paste(tens[digits[2]],
                     Recall(as.numeric(digits[1]))))
-    else if (nDigits == 3) trim(paste(ones[digits[3]], "hundred and", 
+    else if (nDigits == 3) trim(paste(ones[digits[3]], "hundred and",
                                       Recall(makeNumber(digits[2:1]))))
     else {
       nSuffix <- ((nDigits + 2) %/% 3) - 1
@@ -30,22 +32,22 @@ numbers2words <- function(x){
     text=gsub(" and$","",text)
     #Clear any trailing comma
     gsub("\ *,$","",text)
-  }  
-  makeNumber <- function(...) as.numeric(paste(..., collapse=""))     
+  }
+  makeNumber <- function(...) as.numeric(paste(..., collapse=""))
   #Disable scientific notation
-  opts <- options(scipen=100) 
-  on.exit(options(opts)) 
+  opts <- options(scipen=100)
+  on.exit(options(opts))
   ones <- c("", "one", "two", "three", "four", "five", "six", "seven",
-            "eight", "nine") 
-  names(ones) <- 0:9 
+            "eight", "nine")
+  names(ones) <- 0:9
   teens <- c("ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
              "sixteen", " seventeen", "eighteen", "nineteen")
-  names(teens) <- 0:9 
+  names(teens) <- 0:9
   tens <- c("twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty",
-            "ninety") 
-  names(tens) <- 2:9 
+            "ninety")
+  names(tens) <- 2:9
   x <- round(x)
-  suffixes <- c("thousand", "million", "billion", "trillion")     
+  suffixes <- c("thousand", "million", "billion", "trillion")
   if (length(x) > 1) return(trim(sapply(x, helper)))
   helper(x)
 }
