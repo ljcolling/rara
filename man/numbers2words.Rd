@@ -7,5 +7,5 @@
 numbers2words(x)
 }
 \description{
-Numbers to words blah
+Numbers to words
 }
